@@ -94,4 +94,4 @@ if __name__ == '__main__':
     # t.show_tensor(v[0].reshape(28, 28))
 
     # Saving the model
-    torch.save(rbm, f'models/{n_hidden}hid_{lr}lr_fsrbm_{dataset}_{seed}.pth')
+    torch.save(rbm, f'outputs/{n_hidden}hid_{lr}lr_fsrbm_{dataset}_{seed}.pth')
