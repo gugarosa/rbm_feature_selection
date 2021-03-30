@@ -1,14 +1,14 @@
 import argparse
+import os
 
 import torch
 
+import learnergy.visual.image as im
+import learnergy.visual.tensor as t
 import utils.loader as l
 from core.fsrbm import FSRBM
 from learnergy.models.bernoulli import RBM
-import learnergy.visual.image as im
-import learnergy.visual.tensor as t
 
-import os
 os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
 
 
@@ -23,7 +23,7 @@ def get_arguments():
     # Creates the ArgumentParser
     parser = argparse.ArgumentParser(usage='Trains, reconstructs and saves a FSRBM model.')
 
-    parser.add_argument('dataset', help='Dataset identifier', choices=['mnist', 'fmnist', 'kmnist'])
+    parser.add_argument('dataset', help='Dataset identifier', type=str, choices=['mnist', 'fmnist', 'kmnist'])
 
     parser.add_argument('-n_visible', help='Number of visible units', type=int, default=784)
 
@@ -39,9 +39,13 @@ def get_arguments():
 
     parser.add_argument('-temperature', help='Temperature', type=float, default=1)
 
+    parser.add_argument('-mask_type', help='Type of mask', type=str, choices=['sigmoid', 'diff'], default='sigmoid')
+
+    parser.add_argument('-mask_type', help='Type of mask', type=str, choices=['sigmoid', 'diff'], default='sigmoid')
+
     parser.add_argument('-batch_size', help='Batch size', type=int, default=128)
 
-    parser.add_argument('-epochs', help='Number of training epochs', type=int, default=10)
+    parser.add_argument('-epochs', help='Number of training epochs', type=int, default=1)
 
     parser.add_argument('-device', help='CPU or GPU usage', choices=['cpu', 'cuda'])
 
@@ -63,6 +67,7 @@ if __name__ == '__main__':
     momentum = args.momentum
     decay = args.decay
     T = args.temperature
+    mask_type = args.mask_type
     batch_size = args.batch_size
     epochs = args.epochs
     device = args.device
@@ -84,17 +89,10 @@ if __name__ == '__main__':
 
     # Instantiates the model
     rbm = FSRBM(n_visible=n_visible, n_hidden=n_hidden, steps=steps, learning_rate=lr,
-                momentum=momentum, decay=decay, temperature=T, use_gpu=use_gpu)
+                momentum=momentum, decay=decay, temperature=T, mask_type=mask_type, use_gpu=use_gpu)
 
     # Fitting the model
     rbm.fit(train, batch_size=batch_size, epochs=epochs)
-
-    # im.create_mosaic(rbm.W)
-
-    # f = (rbm.f - torch.min(rbm.f)) / (torch.max(rbm.f) - torch.min(rbm.f))
-    # f = torch.bernoulli(f)
-
-    # print(f)
 
     # Reconstructs the model
     mse, v = rbm.reconstruct(test)
