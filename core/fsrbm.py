@@ -137,6 +137,9 @@ class FSRBM(RBM):
             # Samples the mask
             f = torch.bernoulli(f)
 
+            # Logs the amount of features
+            # logger.info(f'Number of features: {torch.count_nonzero(f)}')
+
         # Applies the feature selection mask over the input
         v = torch.mul(v, f)
 
