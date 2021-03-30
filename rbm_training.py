@@ -5,6 +5,11 @@ import torch
 import utils.loader as l
 from core.fsrbm import FSRBM
 from learnergy.models.bernoulli import RBM
+import learnergy.visual.image as im
+import learnergy.visual.tensor as t
+
+import os
+os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
 
 
 def get_arguments():
@@ -36,7 +41,7 @@ def get_arguments():
 
     parser.add_argument('-batch_size', help='Batch size', type=int, default=128)
 
-    parser.add_argument('-epochs', help='Number of training epochs', type=int, default=5)
+    parser.add_argument('-epochs', help='Number of training epochs', type=int, default=10)
 
     parser.add_argument('-device', help='CPU or GPU usage', choices=['cpu', 'cuda'])
 
@@ -84,13 +89,18 @@ if __name__ == '__main__':
     # Fitting the model
     rbm.fit(train, batch_size=batch_size, epochs=epochs)
 
+    # im.create_mosaic(rbm.W)
+
     # f = (rbm.f - torch.min(rbm.f)) / (torch.max(rbm.f) - torch.min(rbm.f))
     # f = torch.bernoulli(f)
 
     # print(f)
 
     # Reconstructs the model
-    # mse, _ = rbm.reconstruct(test)
+    mse, v = rbm.reconstruct(test)
+
+    # Showing a reconstructed sample
+    t.show_tensor(v[0].reshape(28, 28))
 
     # Saving the model
     # torch.save(rbm, f'models/{n_hidden}hid_{lr}lr_fsrbm_{dataset}_{seed}.pth')

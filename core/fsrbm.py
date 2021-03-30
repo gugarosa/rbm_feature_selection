@@ -49,7 +49,7 @@ class FSRBM(RBM):
                                     momentum, decay, temperature, use_gpu)
 
         # Feature selection mask
-        self.f = nn.Parameter(torch.randn(n_visible))
+        self.f = nn.Parameter(torch.zeros(n_visible))
 
         # Updating optimizer's parameters with `f`
         self.optimizer.add_param_group({'params': self.f})
@@ -76,7 +76,7 @@ class FSRBM(RBM):
 
         self._f = f
 
-    def hidden_sampling(self, v, scale=False):
+    def hidden_sampling(self, v, scale=False, is_test=False):
         """Performs the hidden layer sampling, i.e., P(h|v).
 
         Args:
@@ -88,8 +88,12 @@ class FSRBM(RBM):
 
         """
 
-        f = (self.f - torch.min(self.f)) / (torch.max(self.f) - torch.min(self.f))
-        f = torch.bernoulli(f)
+        f = 1 - torch.sigmoid(self.f)
+        # f = torch.bernoulli(f)
+
+        if is_test:
+            f = torch.bernoulli(f)
+            print(self.n_visible - torch.count_nonzero(f))
 
         # Masking the input layer
         v = torch.mul(v, f)
@@ -123,8 +127,10 @@ class FSRBM(RBM):
 
         """
 
-        f = (self.f - torch.min(self.f)) / (torch.max(self.f) - torch.min(self.f))
-        f = torch.bernoulli(f)
+        f = 1 - torch.sigmoid(self.f)
+        # f = torch.bernoulli(f)
+        
+        # print(self.f)
 
         samples = torch.mul(samples, f)
 
@@ -155,11 +161,6 @@ class FSRBM(RBM):
             The logarithm of the pseudo-likelihood based on input samples.
 
         """
-
-        f = (self.f - torch.min(self.f)) / (torch.max(self.f) - torch.min(self.f))
-        f = torch.bernoulli(f)
-
-        samples = torch.mul(samples, f)
 
         # Gathering a new array to hold the rounded samples
         samples_binary = torch.round(samples)
@@ -272,3 +273,57 @@ class FSRBM(RBM):
             logger.info('MSE: %f | log-PL: %f', mse, pl)
 
         return mse, pl
+
+    def reconstruct(self, dataset):
+        """Reconstructs batches of new samples.
+
+        Args:
+            dataset (torch.utils.data.Dataset): A Dataset object containing the testing data.
+
+        Returns:
+            Reconstruction error and visible probabilities, i.e., P(v|h).
+
+        """
+
+        logger.info('Reconstructing new samples ...')
+
+        # Resetting MSE to zero
+        mse = 0
+
+        # Defining the batch size as the amount of samples in the dataset
+        batch_size = len(dataset)
+
+        # Transforming the dataset into training batches
+        batches = DataLoader(dataset, batch_size=batch_size,
+                             shuffle=False, num_workers=0)
+
+        # For every batch
+        for samples, _ in tqdm(batches):
+            # Flattening the samples' batch
+            samples = samples.reshape(len(samples), self.n_visible)
+
+            # Checking whether GPU is avaliable and if it should be used
+            if self.device == 'cuda':
+                # Applies the GPU usage to the data
+                samples = samples.cuda()
+
+            # Calculating positive phase hidden probabilities and states
+            _, pos_hidden_states = self.hidden_sampling(samples, is_test=True)
+
+            # Calculating visible probabilities and states
+            visible_probs, visible_states = self.visible_sampling(
+                pos_hidden_states)
+
+            # Calculating current's batch reconstruction MSE
+            batch_mse = torch.div(
+                torch.sum(torch.pow(samples - visible_states, 2)), batch_size)
+
+            # Summing up the reconstruction's MSE
+            mse += batch_mse
+
+        # Normalizing the MSE with the number of batches
+        mse /= len(batches)
+
+        logger.info('MSE: %f', mse)
+
+        return mse, visible_probs
