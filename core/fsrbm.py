@@ -63,6 +63,8 @@ class FSRBM(RBM):
             # If yes, re-uses CUDA in the whole class
             self.cuda()
 
+        logger.debug('Type of Mask: %s | Binary Sampling: %s',
+                    self.mask_type, self.use_binary_sampling)
         logger.info('Class overrided.')
 
     @property

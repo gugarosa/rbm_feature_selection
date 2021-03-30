@@ -5,7 +5,7 @@ import torch
 
 import learnergy.visual.tensor as t
 import utils.loader as l
-from core.fsrbm import FSRBM
+from learnergy.models.bernoulli import RBM
 
 # Caveat to enable image showing on MacOS
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
@@ -20,7 +20,7 @@ def get_arguments():
     """
 
     # Creates the ArgumentParser
-    parser = argparse.ArgumentParser(usage='Trains, reconstructs and saves a FSRBM model.')
+    parser = argparse.ArgumentParser(usage='Trains, reconstructs and saves an RBM model.')
 
     parser.add_argument('dataset', help='Dataset identifier', type=str, choices=['mnist', 'fmnist', 'kmnist'])
 
@@ -38,15 +38,11 @@ def get_arguments():
 
     parser.add_argument('-temperature', help='Temperature', type=float, default=1)
 
-    parser.add_argument('-mask_type', help='Type of mask', type=str, choices=['sigmoid', 'diff'], default='sigmoid')
-
     parser.add_argument('-batch_size', help='Batch size', type=int, default=128)
 
     parser.add_argument('-epochs', help='Number of training epochs', type=int, default=10)
 
     parser.add_argument('-seed', help='Seed identifier', type=int, default=0)
-
-    parser.add_argument('--use_binary_sampling', help='Usage of binary sampling', action='store_true')
 
     parser.add_argument('--use_gpu', help='Usage of GPU', action='store_true')
 
@@ -66,11 +62,9 @@ if __name__ == '__main__':
     momentum = args.momentum
     decay = args.decay
     T = args.temperature
-    mask_type = args.mask_type
     batch_size = args.batch_size
     epochs = args.epochs
     seed = args.seed
-    use_binary_sampling = args.use_binary_sampling
     use_gpu = args.use_gpu
 
     # Loads the data
@@ -80,9 +74,8 @@ if __name__ == '__main__':
     torch.manual_seed(seed)
 
     # Instantiates the model
-    rbm = FSRBM(n_visible=n_visible, n_hidden=n_hidden, steps=steps, learning_rate=lr,
-                momentum=momentum, decay=decay, temperature=T, mask_type=mask_type,
-                use_binary_sampling=use_binary_sampling, use_gpu=use_gpu)
+    rbm = RBM(n_visible=n_visible, n_hidden=n_hidden, steps=steps, learning_rate=lr,
+                momentum=momentum, decay=decay, temperature=T, use_gpu=use_gpu)
 
     # Fitting the model
     rbm.fit(train, batch_size=batch_size, epochs=epochs)
@@ -94,4 +87,4 @@ if __name__ == '__main__':
     # t.show_tensor(v[0].reshape(28, 28))
 
     # Saving the model
-    torch.save(rbm, f'models/{n_hidden}hid_{lr}lr_fsrbm_{dataset}_{seed}.pth')
+    torch.save(rbm, f'models/{n_hidden}hid_{lr}lr_rbm_{dataset}_{seed}.pth')
