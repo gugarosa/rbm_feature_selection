@@ -1,14 +1,10 @@
 import argparse
-import os
 
 import torch
 
-import learnergy.visual.tensor as t
 import utils.loader as l
+from core.fsrbm import FSRBM
 from learnergy.models.bernoulli import RBM
-
-# Caveat to enable image showing on MacOS
-os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 
 
 def get_arguments():
@@ -20,9 +16,11 @@ def get_arguments():
     """
 
     # Creates the ArgumentParser
-    parser = argparse.ArgumentParser(usage='Trains, reconstructs and saves an RBM model.')
+    parser = argparse.ArgumentParser(usage='Trains, reconstructs and saves a FSRBM/RBM model.')
 
     parser.add_argument('dataset', help='Dataset identifier', type=str, choices=['mnist', 'fmnist', 'kmnist'])
+
+    parser.add_argument('model', help='Model identifier', type=str, choices=['fsrbm', 'rbm'])
 
     parser.add_argument('-n_visible', help='Number of visible units', type=int, default=784)
 
@@ -44,6 +42,8 @@ def get_arguments():
 
     parser.add_argument('-seed', help='Seed identifier', type=int, default=0)
 
+    parser.add_argument('--use_binary_sampling', help='Usage of binary sampling', action='store_true')
+
     parser.add_argument('--use_gpu', help='Usage of GPU', action='store_true')
 
     return parser.parse_args()
@@ -55,6 +55,7 @@ if __name__ == '__main__':
 
     # Gathering variables from arguments
     dataset = args.dataset
+    model = args.model
     n_visible = args.n_visible
     n_hidden = args.n_hidden
     steps = args.steps
@@ -65,26 +66,30 @@ if __name__ == '__main__':
     batch_size = args.batch_size
     epochs = args.epochs
     seed = args.seed
+    use_binary_sampling = args.use_binary_sampling
     use_gpu = args.use_gpu
 
     # Loads the data
-    train, _, test = l.load_dataset(name=dataset)
+    train, _, _ = l.load_dataset(name=dataset)
 
     # Defining the torch seed
     torch.manual_seed(seed)
 
-    # Instantiates the model
-    rbm = RBM(n_visible=n_visible, n_hidden=n_hidden, steps=steps, learning_rate=lr,
-                momentum=momentum, decay=decay, temperature=T, use_gpu=use_gpu)
+    # Checks if supplied model is a FSRBM
+    if model == 'fsrbm':
+        # Instantiates the model
+        rbm = FSRBM(n_visible=n_visible, n_hidden=n_hidden, steps=steps, learning_rate=lr,
+                    momentum=momentum, decay=decay, temperature=T, use_binary_sampling=use_binary_sampling,
+                    use_gpu=use_gpu)
+    
+    # If not, it is a standard RBM
+    else:
+        # Instantiates the model
+        rbm = RBM(n_visible=n_visible, n_hidden=n_hidden, steps=steps, learning_rate=lr,
+                  momentum=momentum, decay=decay, temperature=T, use_gpu=use_gpu)
 
     # Fitting the model
     rbm.fit(train, batch_size=batch_size, epochs=epochs)
 
-    # Reconstructs the model
-    mse, v = rbm.reconstruct(test)
-
-    # Showing a reconstructed sample
-    t.show_tensor(v[0].reshape(28, 28))
-
     # Saving the model
-    # torch.save(rbm, f'outputs/{n_hidden}hid_{lr}lr_rbm_{dataset}_{seed}.pth')
+    torch.save(rbm, f'outputs/{n_hidden}hid_{lr}lr_{model}_{dataset}_{seed}.pth')
