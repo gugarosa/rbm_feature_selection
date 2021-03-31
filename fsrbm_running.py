@@ -38,8 +38,6 @@ def get_arguments():
 
     parser.add_argument('-temperature', help='Temperature', type=float, default=1)
 
-    parser.add_argument('-mask_type', help='Type of mask', type=str, choices=['sigmoid', 'diff'], default='sigmoid')
-
     parser.add_argument('-batch_size', help='Batch size', type=int, default=128)
 
     parser.add_argument('-epochs', help='Number of training epochs', type=int, default=10)
@@ -66,7 +64,6 @@ if __name__ == '__main__':
     momentum = args.momentum
     decay = args.decay
     T = args.temperature
-    mask_type = args.mask_type
     batch_size = args.batch_size
     epochs = args.epochs
     seed = args.seed
@@ -81,8 +78,8 @@ if __name__ == '__main__':
 
     # Instantiates the model
     rbm = FSRBM(n_visible=n_visible, n_hidden=n_hidden, steps=steps, learning_rate=lr,
-                momentum=momentum, decay=decay, temperature=T, mask_type=mask_type,
-                use_binary_sampling=use_binary_sampling, use_gpu=use_gpu)
+                momentum=momentum, decay=decay, temperature=T, use_binary_sampling=use_binary_sampling,
+                use_gpu=use_gpu)
 
     # Fitting the model
     rbm.fit(train, batch_size=batch_size, epochs=epochs)

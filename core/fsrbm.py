@@ -22,8 +22,8 @@ class FSRBM(RBM):
     """
 
     def __init__(self, n_visible=128, n_hidden=128, steps=1, learning_rate=0.1,
-                 momentum=0, decay=0, temperature=1, mask_type='sigmoid',
-                 use_binary_sampling=False, use_gpu=False):
+                 momentum=0, decay=0, temperature=1, use_binary_sampling=False,
+                 use_gpu=False):
         """Initialization method.
 
         Args:
@@ -34,7 +34,6 @@ class FSRBM(RBM):
             momentum (float): Momentum parameter.
             decay (float): Weight decay used for penalization.
             temperature (float): Temperature factor.
-            mask_type (str): Type of feature selection mask.
             use_binary_sampling (boolean): Whether a binary sampling should be used in reconstruction or not.
             use_gpu (boolean): Whether GPU should be used or not.
 
@@ -45,9 +44,6 @@ class FSRBM(RBM):
         # Override its parent class
         super(FSRBM, self).__init__(n_visible, n_hidden, steps, learning_rate,
                                     momentum, decay, temperature, use_gpu)
-
-        # Type of feature selection mask
-        self.mask_type = mask_type
 
         # Whether a binary sampling should be used in reconstruction or not
         self.use_binary_sampling = use_binary_sampling
@@ -63,24 +59,8 @@ class FSRBM(RBM):
             # If yes, re-uses CUDA in the whole class
             self.cuda()
 
-        logger.debug('Type of Mask: %s | Binary Sampling: %s',
-                    self.mask_type, self.use_binary_sampling)
+        logger.debug('Binary Sampling: %s', self.use_binary_sampling)
         logger.info('Class overrided.')
-
-    @property
-    def mask_type(self):
-        """str: Type of feature selection mask.
-
-        """
-
-        return self._mask_type
-
-    @mask_type.setter
-    def mask_type(self, mask_type):
-        if mask_type not in ['sigmoid', 'diff']:
-            raise e.TypeError('`mask_type` should be `sigmoid` or `diff`')
-
-        self._mask_type = mask_type
 
     @property
     def use_binary_sampling(self):
@@ -127,11 +107,6 @@ class FSRBM(RBM):
         # Applies sigmoid over the mask
         f = torch.sigmoid(self.f)
 
-        # Checks the type of the mask to be used
-        if self.mask_type == 'diff':
-            # Calculates the mask using a difference
-            f = 1 - f
-
         # Checks if reconstruction mask should be used
         if self.use_binary_sampling:
             # Samples the mask
@@ -174,11 +149,6 @@ class FSRBM(RBM):
 
         # Applies sigmoid over the mask
         f = torch.sigmoid(self.f)
-
-        # Checks the type of the mask to be used
-        if self.mask_type == 'diff':
-            # Calculates the mask using a difference
-            f = 1 - f
 
         # Applies the feature selection mask over the input
         samples = torch.mul(samples, f)
