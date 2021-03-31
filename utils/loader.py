@@ -60,7 +60,7 @@ def load_dataset(name='mnist', val_split=0.2, mask_file=None):
             BinaryMask(mask_file)
         ])
 
-    # If not
+    # If there is no supplied mask file
     else:
         # Just uses the standard transform
         transform = tv.transforms.ToTensor()
