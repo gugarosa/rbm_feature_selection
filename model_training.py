@@ -93,3 +93,12 @@ if __name__ == '__main__':
 
     # Saving the model
     torch.save(rbm, f'outputs/{n_hidden}hid_{lr}lr_{model}_{dataset}_{seed}.pth')
+
+    # Checks if supplied model is a FSRBM
+    if model == 'fsrbm':
+        # Calculates the mask and logs the number of features
+        mask = torch.bernoulli(torch.sigmoid(rbm.f))
+        print(f'Number of features in the mask: {torch.count_nonzero(mask)}')
+
+        # Saves the feature selection mask
+        torch.save(mask, f'outputs/{n_hidden}hid_{lr}lr_mask_{dataset}_{seed}.pth')

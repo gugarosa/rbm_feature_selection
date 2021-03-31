@@ -4,6 +4,8 @@
 import torch
 import torch.nn.functional as F
 from torch import nn
+from torch.utils.data import DataLoader
+from tqdm import tqdm
 
 import learnergy.utils.exception as e
 import learnergy.utils.logging as l
@@ -93,7 +95,7 @@ class FSRBM(RBM):
         self._f = f
 
     def hidden_sampling(self, v, scale=False):
-        """Performs the hidden layer sampling, i.e., P(h|v).
+        """Performs the hidden layer sampling with input masking, i.e., P(h|v).
 
         Args:
             v (torch.Tensor): A tensor incoming from the visible layer.
@@ -117,6 +119,36 @@ class FSRBM(RBM):
 
         # Applies the feature selection mask over the input
         v = torch.mul(v, f)
+
+        # Calculating neurons' activations
+        activations = F.linear(v, self.W.t(), self.b)
+
+        # If scaling is true
+        if scale:
+            # Calculate probabilities with temperature
+            probs = torch.sigmoid(torch.div(activations, self.T))
+
+        # If scaling is false
+        else:
+            # Calculate probabilities as usual
+            probs = torch.sigmoid(activations)
+
+        # Sampling current states
+        states = torch.bernoulli(probs)
+
+        return probs, states
+
+    def hidden_sampling_without_mask(self, v, scale=False):
+        """Performs the hidden layer sampling without input masking, i.e., P(h|v).
+
+        Args:
+            v (torch.Tensor): A tensor incoming from the visible layer.
+            scale (bool): A boolean to decide whether temperature should be used or not.
+
+        Returns:
+            The probabilities and states of the hidden layer sampling.
+
+        """
 
         # Calculating neurons' activations
         activations = F.linear(v, self.W.t(), self.b)
@@ -169,3 +201,58 @@ class FSRBM(RBM):
         energy = -v - h
 
         return energy
+
+    def reconstruct(self, dataset):
+        """Reconstructs batches of new samples.
+
+        Args:
+            dataset (torch.utils.data.Dataset): A Dataset object containing the testing data.
+
+        Returns:
+            Reconstruction error and visible probabilities, i.e., P(v|h).
+
+        """
+
+        logger.info('Reconstructing new samples ...')
+
+        # Resetting MSE to zero
+        mse = 0
+
+        # Defining the batch size as the amount of samples in the dataset
+        batch_size = len(dataset)
+
+        # Transforming the dataset into training batches
+        batches = DataLoader(dataset, batch_size=batch_size,
+                             shuffle=False, num_workers=0)
+
+        # For every batch
+        for samples, _ in tqdm(batches):
+            # Flattening the samples' batch
+            samples = samples.reshape(len(samples), self.n_visible)
+
+            # Checking whether GPU is avaliable and if it should be used
+            if self.device == 'cuda':
+                # Applies the GPU usage to the data
+                samples = samples.cuda()
+
+            # Calculating positive phase hidden probabilities and states
+            # Note that we do not use input masking when reconstructing
+            _, pos_hidden_states = self.hidden_sampling_without_mask(samples)
+
+            # Calculating visible probabilities and states
+            visible_probs, visible_states = self.visible_sampling(
+                pos_hidden_states)
+
+            # Calculating current's batch reconstruction MSE
+            batch_mse = torch.div(
+                torch.sum(torch.pow(samples - visible_states, 2)), batch_size)
+
+            # Summing up the reconstruction's MSE
+            mse += batch_mse
+
+        # Normalizing the MSE with the number of batches
+        mse /= len(batches)
+
+        logger.info('MSE: %f', mse)
+
+        return mse, visible_probs

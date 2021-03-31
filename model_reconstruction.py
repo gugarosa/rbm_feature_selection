@@ -25,6 +25,8 @@ def get_arguments():
 
     parser.add_argument('model_file', help='Model file identifier', type=str)
 
+    parser.add_argument('-mask_file', help='Mask file identifier', type=str)
+
     parser.add_argument('-seed', help='Seed identifier', type=int, default=0)
 
     return parser.parse_args()
@@ -37,17 +39,18 @@ if __name__ == '__main__':
     # Gathering variables from arguments
     dataset = args.dataset
     model_file = args.model_file
+    mask_file = args.mask_file
     seed = args.seed
 
     # Loads the data
-    _, _, test = l.load_dataset(name=dataset)
+    _, _, test = l.load_dataset(name=dataset, mask_file=mask_file)
 
     # Defining the torch seed
     torch.manual_seed(seed)
     
     # Loads the pre-trained model
     rbm = torch.load(model_file)
-
+    
     # Reconstructs the model
     mse, v = rbm.reconstruct(test)
 
