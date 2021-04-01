@@ -3,14 +3,14 @@
 
 import time
 
+import learnergy.utils.exception as e
+import learnergy.utils.logging as l
 import torch
 import torch.nn.functional as F
 from torch import nn
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-import learnergy.utils.exception as e
-import learnergy.utils.logging as l
 from core.rbm import RBM
 
 logger = l.get_logger(__name__)

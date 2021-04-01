@@ -14,18 +14,16 @@ class BinaryMask:
 
     """
 
-    def __init__(self, mask_file):
+    def __init__(self, mask):
         """Initialization method.
 
         Args:
-            mask_file (str): File holding the binary mask to be loaded.
+            mask (torch.Tensor): Tensor holding the binary mask to be applied.
 
         """
 
         # Loads and defines a mask property
-        self.mask = torch.load(mask_file)
-
-        print(f'Mask features: {torch.count_nonzero(self.mask)}')
+        self.mask = mask
 
     def __call__(self, sample):
         # Gathers the size of the current sample
@@ -56,14 +54,23 @@ def load_dataset(name='mnist', val_split=0.2, mask_file=None):
 
     # Checks if there is a supplied mask file
     if mask_file:
+        # Loads the mask file
+        mask = torch.load(mask_file)
+
+        # Gathers the number of features
+        mask_features = torch.count_nonzero(mask).numpy().item()
+
         # If yes, creates the composed transform
         transform = tv.transforms.Compose([
             tv.transforms.ToTensor(),
-            BinaryMask(mask_file)
+            BinaryMask(mask)
         ])
 
     # If there is no supplied mask file
     else:
+        # Number of mask features will be None
+        mask_features = None
+
         # Just uses the standard transform
         transform = tv.transforms.ToTensor()
 
@@ -79,4 +86,4 @@ def load_dataset(name='mnist', val_split=0.2, mask_file=None):
     test = DATASETS[name](root='./data', train=False, download=True,
                           transform=transform)
 
-    return train, val, test
+    return train, val, test, mask_features

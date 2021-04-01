@@ -1,9 +1,9 @@
 import argparse
 import os
 
+import learnergy.visual.tensor as t
 import torch
 
-import learnergy.visual.tensor as t
 import utils.loader as l
 
 # Caveat to enable image showing on MacOS
@@ -43,9 +43,9 @@ if __name__ == '__main__':
     seed = args.seed
 
     # Loads the data
-    _, _, test = l.load_dataset(name=dataset, mask_file=mask_file)
+    _, _, test, _ = l.load_dataset(name=dataset, mask_file=mask_file)
 
-    # Defining the torch seed
+    # Defines the torch seed
     torch.manual_seed(seed)
     
     # Loads the pre-trained model
