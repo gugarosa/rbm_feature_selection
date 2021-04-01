@@ -341,7 +341,7 @@ class FSRBM(RBM):
             # Verifies if it is supposed to take a snapshot
             if (epoch + 1) % epochs_per_snapshot == 0:
                 # Performs a model snapshot
-                torch.save(self, f'outputs/fsrbm_snapshot_epoch_{epoch+1}.pth')
+                torch.save(self, f'outputs/fsrbm_epoch_{epoch+1}.pth')
 
                 # Checks if input mask is sigmoid
                 if self.input_mask_fn == 'sigmoid':
@@ -353,7 +353,7 @@ class FSRBM(RBM):
                 
                 # Samples the mask and saves it
                 mask = torch.bernoulli(f)
-                torch.save(mask, f'outputs/mask_snapshot_epoch_{epoch+1}.pth')
+                torch.save(mask, f'outputs/mask_epoch_{epoch+1}.pth')
                 logger.debug('Mask features: %d', torch.count_nonzero(mask))
 
         return mse, pl

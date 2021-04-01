@@ -539,7 +539,7 @@ class RBM(Model):
             # Verifies if it is supposed to take a snapshot
             if (epoch + 1) % epochs_per_snapshot == 0:
                 # Performs a model snapshot
-                torch.save(self, f'outputs/rbm_snapshot_epoch_{epoch+1}.pth')
+                torch.save(self, f'outputs/rbm_epoch_{epoch+1}.pth')
 
         return mse, pl
 
