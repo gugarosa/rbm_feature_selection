@@ -354,7 +354,7 @@ class FSRBM(RBM):
                 # Samples the mask and saves it
                 mask = torch.bernoulli(f)
                 torch.save(mask, f'outputs/mask_epoch_{epoch+1}.pth')
-                logger.debug('Mask features: %d', torch.count_nonzero(mask))
+                logger.info('Mask features: %d', torch.count_nonzero(mask))
 
         return mse, pl
 

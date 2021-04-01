@@ -48,11 +48,17 @@ if __name__ == '__main__':
     if mask_file_stem:
         # If yes, creates a list of mask files
         mask_files = natsorted(glob.glob(f'{mask_file_stem}*'))
+        mask_str = 'mask_'
 
-    # If not
+    # If there is no supplied mask file
     else:
         # Creates a list of None
         mask_files = [None for _ in range(len(model_files))]
+        mask_str = ''
+
+    # Checks the amount of both model and mask files 
+    if len(model_files) != len(mask_files):
+        raise Exception('There should an equal amount of model and mask files.')
 
     # Instantiates a list for holding the MSE
     mse_values = []
@@ -77,10 +83,10 @@ if __name__ == '__main__':
         mask_features_values.append(mask_features)
 
         # Creates the output path for the tensor
-        output_path = f'mask_features_{mask_features}_{os.path.splitext(os.path.basename(model_file))[0]}.png'
+        output_path = f'{mask_str}{os.path.splitext(os.path.basename(model_file))[0]}.png'
 
         # Saves a reconstructed sample
         t.save_tensor(v[0].reshape(28, 28), output_path)
         
     print(f'MSE: {mse_values}')
-    print(f'Mask Features: {mask_features_values}')
+    print(f'Mask features: {mask_features_values}')
