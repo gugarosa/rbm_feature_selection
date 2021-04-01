@@ -25,6 +25,8 @@ class BinaryMask:
         # Loads and defines a mask property
         self.mask = torch.load(mask_file)
 
+        print(f'Mask features: {torch.count_nonzero(self.mask)}')
+
     def __call__(self, sample):
         # Gathers the size of the current sample
         size = sample.size()
@@ -59,8 +61,6 @@ def load_dataset(name='mnist', val_split=0.2, mask_file=None):
             tv.transforms.ToTensor(),
             BinaryMask(mask_file)
         ])
-
-        print(f'Mask features: {torch.count_nonzero(mask)}')
 
     # If there is no supplied mask file
     else:
