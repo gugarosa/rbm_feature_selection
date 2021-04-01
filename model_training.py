@@ -4,7 +4,7 @@ import torch
 
 import utils.loader as l
 from core.fsrbm import FSRBM
-from learnergy.models.bernoulli import RBM
+from core.rbm import RBM
 
 
 def get_arguments():
@@ -40,6 +40,8 @@ def get_arguments():
 
     parser.add_argument('-epochs', help='Number of training epochs', type=int, default=10)
 
+    parser.add_argument('-epochs_per_snapshot', help='Amount of epochs per snapshot', type=int, default=10)
+
     parser.add_argument('-seed', help='Seed identifier', type=int, default=0)
 
     parser.add_argument('-input_mask_fn', help='Mask function', type=str, default='sigmoid', choices=['sigmoid', 'soft_step'])
@@ -67,6 +69,7 @@ if __name__ == '__main__':
     T = args.temperature
     batch_size = args.batch_size
     epochs = args.epochs
+    epochs_per_snapshot = args.epochs_per_snapshot
     seed = args.seed
     input_mask_fn = args.input_mask_fn
     use_binary_sampling = args.use_binary_sampling
@@ -92,23 +95,4 @@ if __name__ == '__main__':
                   momentum=momentum, decay=decay, temperature=T, use_gpu=use_gpu)
 
     # Fitting the model
-    rbm.fit(train, batch_size=batch_size, epochs=epochs)
-
-    # Saving the model
-    torch.save(rbm, f'outputs/{n_hidden}hid_{lr}lr_{model}_{dataset}_{seed}.pth')
-
-    # Checks if supplied model is a FSRBM
-    if model == 'fsrbm':
-        # Checks if input mask is sigmoid
-        if input_mask_fn == 'sigmoid':
-            f = torch.sigmoid(rbm.f)
-        
-        # Checks if input mask is soft step
-        elif input_mask_fn == 'soft_step':
-            f = rbm.soft_step(rbm.f)
-
-        # Samples the mask and saves it
-        mask = torch.bernoulli(f)
-        torch.save(mask, f'outputs/{n_hidden}hid_{lr}lr_mask_{dataset}_{seed}.pth')
-
-        print(f'Number of features in the mask: {torch.count_nonzero(mask)}')
+    rbm.fit(train, batch_size=batch_size, epochs=epochs, epochs_per_snapshot=epochs_per_snapshot)

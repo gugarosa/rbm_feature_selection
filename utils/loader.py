@@ -60,6 +60,8 @@ def load_dataset(name='mnist', val_split=0.2, mask_file=None):
             BinaryMask(mask_file)
         ])
 
+        print(f'Mask features: {torch.count_nonzero(mask)}')
+
     # If there is no supplied mask file
     else:
         # Just uses the standard transform
