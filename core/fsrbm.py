@@ -24,8 +24,8 @@ class FSRBM(RBM):
     """
 
     def __init__(self, n_visible=128, n_hidden=128, steps=1, learning_rate=0.1,
-                 momentum=0, decay=0, temperature=1, use_binary_sampling=False,
-                 use_gpu=False):
+                 momentum=0, decay=0, temperature=1, input_mask_fn='sigmoid',
+                 use_binary_sampling=False, use_gpu=False):
         """Initialization method.
 
         Args:
@@ -36,6 +36,7 @@ class FSRBM(RBM):
             momentum (float): Momentum parameter.
             decay (float): Weight decay used for penalization.
             temperature (float): Temperature factor.
+            input_mask_fn (str): Mask function to be applied over the input.
             use_binary_sampling (boolean): Whether a binary sampling should be used in reconstruction or not.
             use_gpu (boolean): Whether GPU should be used or not.
 
@@ -46,6 +47,9 @@ class FSRBM(RBM):
         # Override its parent class
         super(FSRBM, self).__init__(n_visible, n_hidden, steps, learning_rate,
                                     momentum, decay, temperature, use_gpu)
+
+        # Mask function to be applied over the input
+        self.input_mask_fn = input_mask_fn
 
         # Whether a binary sampling should be used in reconstruction or not
         self.use_binary_sampling = use_binary_sampling
@@ -61,8 +65,24 @@ class FSRBM(RBM):
             # If yes, re-uses CUDA in the whole class
             self.cuda()
 
-        logger.debug('Binary Sampling: %s', self.use_binary_sampling)
+        logger.debug('Mask Function: %s | Binary Sampling: %s',
+                     self.input_mask_fn, self.use_binary_sampling)
         logger.info('Class overrided.')
+
+    @property
+    def input_mask_fn(self):
+        """str: Mask function to be applied over the input.
+
+        """
+
+        return self._input_mask_fn
+
+    @input_mask_fn.setter
+    def input_mask_fn(self, input_mask_fn):
+        if input_mask_fn not in ['sigmoid', 'soft_step']:
+            raise e.TypeError('`input_mask_fn` should be `sigmoid` or `soft_step`')
+
+        self._input_mask_fn = input_mask_fn
 
     @property
     def use_binary_sampling(self):
@@ -94,6 +114,22 @@ class FSRBM(RBM):
 
         self._f = f
 
+    def soft_step(self, x):
+        """Calculates the Soft Step's function.
+
+        Args:
+            x (torch.Tensor): Tensor with incoming data.
+
+        Returns:
+            A f(x) based on Soft Step's function.
+
+        """
+
+        # Calculates the step function over the input
+        step = torch.heaviside(x, torch.tensor([0.0]))
+
+        return step * (1 - torch.exp(-x)) + (1 - step) * torch.exp(x)
+
     def hidden_sampling(self, v, scale=False):
         """Performs the hidden layer sampling with input masking, i.e., P(h|v).
 
@@ -106,8 +142,15 @@ class FSRBM(RBM):
 
         """
 
-        # Applies sigmoid over the mask
-        f = torch.sigmoid(self.f)
+        # Checks if input mask function is sigmoid
+        if self.input_mask_fn == 'sigmoid':
+            # Applies sigmoid over the mask
+            f = torch.sigmoid(self.f)
+        
+        # Checks if input mask function is soft step
+        elif self.input_mask_fn == 'soft_step':
+            # Applies soft step over the mask
+            f = self.soft_step(self.f)
 
         # Checks if reconstruction mask should be used
         if self.use_binary_sampling:
@@ -179,8 +222,15 @@ class FSRBM(RBM):
 
         """
 
-        # Applies sigmoid over the mask
-        f = torch.sigmoid(self.f)
+        # Checks if input mask function is sigmoid
+        if self.input_mask_fn == 'sigmoid':
+            # Applies sigmoid over the mask
+            f = torch.sigmoid(self.f)
+        
+        # Checks if input mask function is soft step
+        elif self.input_mask_fn == 'soft_step':
+            # Applies soft step over the mask
+            f = self.soft_step(self.f)
 
         # Applies the feature selection mask over the input
         samples = torch.mul(samples, f)

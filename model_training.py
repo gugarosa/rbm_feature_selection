@@ -42,6 +42,8 @@ def get_arguments():
 
     parser.add_argument('-seed', help='Seed identifier', type=int, default=0)
 
+    parser.add_argument('-input_mask_fn', help='Mask function', type=str, default='sigmoid', choices=['sigmoid', 'soft_step'])
+
     parser.add_argument('--use_binary_sampling', help='Usage of binary sampling', action='store_true')
 
     parser.add_argument('--use_gpu', help='Usage of GPU', action='store_true')
@@ -66,6 +68,7 @@ if __name__ == '__main__':
     batch_size = args.batch_size
     epochs = args.epochs
     seed = args.seed
+    input_mask_fn = args.input_mask_fn
     use_binary_sampling = args.use_binary_sampling
     use_gpu = args.use_gpu
 
@@ -79,8 +82,8 @@ if __name__ == '__main__':
     if model == 'fsrbm':
         # Instantiates the model
         rbm = FSRBM(n_visible=n_visible, n_hidden=n_hidden, steps=steps, learning_rate=lr,
-                    momentum=momentum, decay=decay, temperature=T, use_binary_sampling=use_binary_sampling,
-                    use_gpu=use_gpu)
+                    momentum=momentum, decay=decay, temperature=T, input_mask_fn=input_mask_fn,
+                    use_binary_sampling=use_binary_sampling, use_gpu=use_gpu)
     
     # If not, it is a standard RBM
     else:
@@ -96,9 +99,16 @@ if __name__ == '__main__':
 
     # Checks if supplied model is a FSRBM
     if model == 'fsrbm':
-        # Calculates the mask and logs the number of features
-        mask = torch.bernoulli(torch.sigmoid(rbm.f))
-        print(f'Number of features in the mask: {torch.count_nonzero(mask)}')
+        # Checks if input mask is sigmoid
+        if input_mask_fn == 'sigmoid':
+            f = torch.sigmoid(rbm.f)
+        
+        # Checks if input mask is soft step
+        elif input_mask_fn == 'soft_step':
+            f = rbm.soft_step(rbm.f)
 
-        # Saves the feature selection mask
+        # Samples the mask and saves it
+        mask = torch.bernoulli(f)
         torch.save(mask, f'outputs/{n_hidden}hid_{lr}lr_mask_{dataset}_{seed}.pth')
+
+        print(f'Number of features in the mask: {torch.count_nonzero(mask)}')
