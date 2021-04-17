@@ -62,6 +62,16 @@ python model_reconstruction.py -h
 
 *Again, the `-h` will invoke the script helper. Note that we are outputting the MSE metric, as well as an image from the first reconstructed tensor. Feel free to change accordingly your needs.*
 
+### Model Classification
+
+After training the desired models, one can also use its pre-trained files and fine-tune the model in a downstream classification task. Note that if a FSRBM has been trained, there will be an extra output file, which stands for the binary mask that can be used to mask the dataset. Thus, please use the following script to accomplish such a procedure:
+
+```Python
+python model_classification.py -h
+```
+
+*Note that we are outputting the training loss and validation accuracy for every fine-tuning epoch. Feel free to change accordingly your needs.*
+
 ### Model Batch Reconstruction (Optional)
 
 Instead of reconstructing model per model, one can perform a batch reconstruction along the saved models. Such a procedure is useful is there has been snapshots throughout the training epochs, i.e., models were saved every 10 epochs during the 50 training epochs. Please, use the following script:

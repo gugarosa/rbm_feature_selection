@@ -96,7 +96,7 @@ if __name__ == '__main__':
     train_losses, val_accs = [], []
 
     # Defines the output path
-    output_path = f'{mask_str}{os.path.splitext(os.path.basename(model_file))[0]}.txt'
+    output_path = f'{mask_str}{os.path.splitext(os.path.basename(model_file))[0]}.csv'
 
     # For amount of fine-tuning epochs
     for e in range(fine_tune_epochs):
