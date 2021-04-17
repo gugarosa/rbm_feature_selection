@@ -165,7 +165,7 @@ if __name__ == '__main__':
             val_acc = torch.mean((torch.sum(preds == y_batch).float()) / x_batch.size(0))
 
         # Appends metrics to list
-        train_losses.append(train_loss.detach().numpy() / len(train_batch))
+        train_losses.append(train_loss / len(train_batch))
         val_accs.append(val_acc.detach().numpy())
 
         print(f'Loss: {train_loss / len(train_batch)} | Val Accuracy: {val_acc}')
